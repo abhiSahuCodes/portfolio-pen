@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { DragDropContext } from 'react-beautiful-dnd';
 import { useDispatch } from 'react-redux';
+import { DndContext, DragOverlay, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove } from '@dnd-kit/sortable';
 import { reorderSections, setDragging, addSection } from '../lib/redux/slices/portfolioSlice';
 import EditorHeader from '../components/editor/EditorHeader';
 import SectionsList from '../components/editor/SectionsList';
@@ -13,71 +14,63 @@ const Editor = () => {
   const dispatch = useDispatch();
   const { toast } = useToast();
   
-  const handleDragStart = () => {
+  // Configure sensors for drag detection
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5, // Minimum drag distance before activation
+      },
+    })
+  );
+  
+  const handleDragStart = (event) => {
     dispatch(setDragging(true));
   };
   
-  const handleDragEnd = (result) => {
+  const handleDragEnd = (event) => {
     dispatch(setDragging(false));
     
-    const { source, destination, draggableId } = result;
+    const { active, over } = event;
     
-    // If dropped outside a droppable area
-    if (!destination) {
+    // If no valid drop target
+    if (!over) {
       return;
     }
     
     // If dropped in the same position
-    if (
-      source.droppableId === destination.droppableId &&
-      source.index === destination.index
-    ) {
+    if (active.id === over.id) {
       return;
     }
     
-    // If dragging from sections list to canvas
-    if (
-      source.droppableId === 'sections-list' &&
-      destination.droppableId === 'portfolio-canvas'
-    ) {
-      // Extract the template type from the draggableId
-      const templateId = draggableId;
-      const templateMatch = templateId.match(/^([a-z-]+)-template$/);
+    // Handle dropping a template from sections list to canvas
+    if (active.id.includes('-template') && over.id === 'portfolio-canvas') {
+      // Find the template using the active id
+      const template = SECTION_TEMPLATES.find(t => t.id === active.id);
       
-      if (templateMatch && templateMatch[1]) {
-        const sectionType = templateMatch[1];
+      if (template) {
+        // Create a new section based on the template
+        const newSection = {
+          id: `${template.type}-${Date.now()}`,
+          type: template.type,
+          ...template.template,
+        };
         
-        // Find the template from the SectionsList using the imported array
-        const template = SECTION_TEMPLATES.find(t => t.id === templateId);
+        // Add the new section to the portfolio
+        dispatch(addSection(newSection));
         
-        if (template) {
-          // Create a new section based on the template
-          const newSection = {
-            id: `${template.type}-${Date.now()}`,
-            type: template.type,
-            ...template.template,
-          };
-          
-          // Add the new section to the portfolio
-          dispatch(addSection(newSection));
-          
-          toast({
-            title: `${template.title} section added`,
-            description: "Section has been added to your portfolio",
-          });
-        }
+        toast({
+          title: `${template.title} section added`,
+          description: "Section has been added to your portfolio",
+        });
       }
       return;
     }
     
-    // If reordering within the canvas
-    if (
-      source.droppableId === 'portfolio-canvas' &&
-      destination.droppableId === 'portfolio-canvas'
-    ) {
+    // Handle reordering within the canvas
+    if (active.data.current?.type === 'section' && over.data.current?.type === 'section') {
       dispatch(reorderSections({
-        sourceIndex: source.index,
-        destinationIndex: destination.index,
+        sourceIndex: active.data.current.index,
+        destinationIndex: over.data.current.index,
       }));
       
       toast({
@@ -91,7 +84,9 @@ const Editor = () => {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <EditorHeader />
       
-      <DragDropContext 
+      <DndContext 
+        sensors={sensors}
+        collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
@@ -99,10 +94,9 @@ const Editor = () => {
           <div className="w-full lg:w-64 border-b lg:border-b-0 lg:border-r border-gray-200 bg-white overflow-y-auto">
             <SectionsList />
           </div>
-          
           <PortfolioCanvas />
         </div>
-      </DragDropContext>
+      </DndContext>
     </div>
   );
 };

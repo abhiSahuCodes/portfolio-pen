@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { arrayMove } from '@dnd-kit/sortable';
 
 // Initial portfolio template
 const initialState = {
@@ -119,19 +120,20 @@ const portfolioSlice = createSlice({
         section.order = index;
       });
     },
+
+    // Then in your reorderSections reducer:
     reorderSections: (state, action) => {
       const { sourceIndex, destinationIndex } = action.payload;
-      // Make a copy of the sections array to avoid direct modification
-      const sections = [...state.currentPortfolio.sections];
-      const [removed] = sections.splice(sourceIndex, 1);
-      sections.splice(destinationIndex, 0, removed);
-
-      // Update order property for each section
-      sections.forEach((section, index) => {
+      state.currentPortfolio.sections = arrayMove(
+        state.currentPortfolio.sections,
+        sourceIndex,
+        destinationIndex
+      );
+      
+      // Update order values
+      state.currentPortfolio.sections.forEach((section, index) => {
         section.order = index;
       });
-
-      state.currentPortfolio.sections = sections;
     },
     updateTheme: (state, action) => {
       state.currentPortfolio.theme = {

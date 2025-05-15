@@ -1,6 +1,8 @@
 
 import React from 'react';
-import { Droppable, Draggable } from 'react-beautiful-dnd';
+import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useSelector, useDispatch } from 'react-redux';
 import { addSection } from '../../lib/redux/slices/portfolioSlice';
 import { useToast } from '../../hooks/use-toast';
@@ -93,9 +95,72 @@ export const SECTION_TEMPLATES = [
   },
 ];
 
+// Create a draggable template item component
+const DraggableTemplateItem = ({ template, onAdd }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({
+    id: template.id,
+    data: {
+      type: 'template',
+      template
+    }
+  });
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`drag-item p-3 bg-white dark:bg-slate-800 border border-gray-200 rounded-md shadow-sm`}
+    >
+      <div className="flex items-center">
+        <div 
+          {...attributes} 
+          {...listeners}
+          className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-md bg-indigo-500 text-white cursor-move"
+        >
+          {template.icon}
+        </div>
+        <div className="ml-4">
+          <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            {template.title}
+          </h4>
+          <p className="text-xs text-gray-500 dark:text-gray-300">
+            {template.description}
+          </p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => onAdd(template)}
+        className="mt-2 w-full inline-flex justify-center items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white dark:bg-slate-500 dark:text-slate-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      >
+        Add Section
+      </button>
+    </div>
+  );
+};
+
 const SectionsList = () => {
   const dispatch = useDispatch();
   const { toast } = useToast();
+  const { setNodeRef } = useDroppable({
+    id: 'sections-list',
+    data: {
+      accepts: ['template']
+    }
+  });
 
   const handleAddSection = (template) => {
     const newSection = {
@@ -121,56 +186,23 @@ const SectionsList = () => {
       </div>
       
       <div className="p-4">
-        <Droppable droppableId="sections-list" isDropDisabled={true}>
-          {(provided) => (
-            <div
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-              className="space-y-3"
-            >
-              {SECTION_TEMPLATES.map((template, index) => (
-                <Draggable
-                  key={template.id}
-                  draggableId={template.id}
-                  index={index}
-                >
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                      className={`drag-item p-3 bg-white dark:bg-slate-800 border border-gray-200 rounded-md shadow-sm ${
-                        snapshot.isDragging ? 'opacity-50' : ''
-                      }`}
-                    >
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-md bg-indigo-500 text-white">
-                          {template.icon}
-                        </div>
-                        <div className="ml-4">
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {template.title}
-                          </h4>
-                          <p className="text-xs text-gray-500 dark:text-gray-300">
-                            {template.description}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleAddSection(template)}
-                        className="mt-2 w-full inline-flex justify-center items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white dark:bg-slate-500 dark:text-slate-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                      >
-                        Add Section
-                      </button>
-                    </div>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
+        <div
+          ref={setNodeRef}
+          className="space-y-3"
+        >
+          <SortableContext 
+            items={SECTION_TEMPLATES.map(t => t.id)} 
+            strategy={verticalListSortingStrategy}
+          >
+            {SECTION_TEMPLATES.map((template) => (
+              <DraggableTemplateItem
+                key={template.id}
+                template={template}
+                onAdd={handleAddSection}
+              />
+            ))}
+          </SortableContext>
+        </div>
       </div>
     </div>
   );
