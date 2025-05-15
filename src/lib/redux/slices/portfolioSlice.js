@@ -85,9 +85,13 @@ const portfolioSlice = createSlice({
   name: "portfolio",
   initialState,
   reducers: {
+
+    // Update portfolio title
     updatePortfolioTitle: (state, action) => {
       state.currentPortfolio.title = action.payload;
     },
+
+    // Update section
     updateSection: (state, action) => {
       const { sectionId, updates } = action.payload;
       const sectionIndex = state.currentPortfolio.sections.findIndex(
@@ -101,14 +105,18 @@ const portfolioSlice = createSlice({
         };
       }
     },
+
+    // Add section
     addSection: (state, action) => {
       const newSection = {
         ...action.payload,
-        id: `${action.payload.type}-${Date.now()}`, // Make ID unique
+        id: `${action.payload.type}-${Date.now()}`,
         order: state.currentPortfolio.sections.length
       };
       state.currentPortfolio.sections.push(newSection);
     },
+
+    // Remove section
     removeSection: (state, action) => {
       const sectionId = action.payload;
       state.currentPortfolio.sections = state.currentPortfolio.sections.filter(
@@ -121,7 +129,7 @@ const portfolioSlice = createSlice({
       });
     },
 
-    // Then in your reorderSections reducer:
+    // Reorder sections
     reorderSections: (state, action) => {
       const { sourceIndex, destinationIndex } = action.payload;
       state.currentPortfolio.sections = arrayMove(
@@ -135,22 +143,28 @@ const portfolioSlice = createSlice({
         section.order = index;
       });
     },
+
+    // Update theme
     updateTheme: (state, action) => {
       state.currentPortfolio.theme = {
         ...state.currentPortfolio.theme,
         ...action.payload,
       };
     },
+
+    // Set dragging state
     setDragging: (state, action) => {
       state.isDragging = action.payload;
     },
+
+    // Save portfolio
     savePortfolio: (state) => {
       const portfolioExists = state.savedPortfolios.some(
         (p) => p.id === state.currentPortfolio.id
       );
 
       if (!portfolioExists) {
-        // Use a deep copy to ensure we don't maintain references to the current portfolio
+        // Deep copy to avoid reference to currentPortfolio
         state.savedPortfolios.push(
           JSON.parse(JSON.stringify(state.currentPortfolio))
         );
@@ -162,17 +176,21 @@ const portfolioSlice = createSlice({
         );
       }
     },
+
+    // Load portfolio
     loadPortfolio: (state, action) => {
-      // Create a deep copy to ensure we don't have reference issues
       state.currentPortfolio = JSON.parse(JSON.stringify(action.payload));
     },
+
+    // Import portfolio
     importPortfolio: (state, action) => {
-      // Create a deep copy to ensure we don't have reference issues
       state.currentPortfolio = JSON.parse(JSON.stringify(action.payload));
     },
+
+    // Create new portfolio
     createNewPortfolio: (state, action) => {
       const id = `portfolio-${Date.now()}`;
-      // Create a deep copy of the initial template
+      // Deep copy of initial state
       const newPortfolio = JSON.parse(
         JSON.stringify(initialState.currentPortfolio)
       );
@@ -180,6 +198,14 @@ const portfolioSlice = createSlice({
       newPortfolio.title =
         action.payload || `Portfolio ${state.savedPortfolios.length + 1}`;
       state.currentPortfolio = newPortfolio;
+    },
+
+    // Delete portfolio
+    deletePortfolio: (state, action) => {
+      const portfolioId = action.payload;
+      state.savedPortfolios = state.savedPortfolios.filter(
+        (portfolio) => portfolio.id !== portfolioId
+      );
     },
   },
 });
@@ -196,6 +222,7 @@ export const {
   loadPortfolio,
   importPortfolio,
   createNewPortfolio,
+  deletePortfolio,
 } = portfolioSlice.actions;
 
 export default portfolioSlice.reducer;

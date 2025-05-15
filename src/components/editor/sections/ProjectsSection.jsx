@@ -10,6 +10,7 @@ const ProjectForm = ({ project, onSave, onCancel }) => {
     link: '',
   });
 
+  // Handle form input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -18,6 +19,7 @@ const ProjectForm = ({ project, onSave, onCancel }) => {
     }));
   };
 
+  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData);

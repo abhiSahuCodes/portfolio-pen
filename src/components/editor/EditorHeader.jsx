@@ -20,10 +20,12 @@ const EditorHeader = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Handle title change
   const handleTitleChange = (e) => {
     dispatch(updatePortfolioTitle(e.target.value));
   };
 
+  // Handle save
   const handleSave = () => {
     dispatch(savePortfolio());
     toast({
@@ -32,6 +34,7 @@ const EditorHeader = () => {
     });
   };
 
+  // Handle export to JSON
   const handleExportJSON = () => {
     exportAsJSON(currentPortfolio);
     setIsExporting(false);
@@ -41,6 +44,7 @@ const EditorHeader = () => {
     });
   };
 
+  // Handle export to HTML
   const handleExportHTML = () => {
     exportAsHTML(currentPortfolio);
     setIsExporting(false);
@@ -50,6 +54,7 @@ const EditorHeader = () => {
     });
   };
 
+  // Handle export to PDF
   const handleExportPDF = () => {
     exportAsPDF("portfolio-preview", currentPortfolio);
     setIsExporting(false);

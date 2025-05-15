@@ -5,6 +5,7 @@ const HeaderSection = ({ section, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(section.content);
 
+// Handle for change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -13,6 +14,7 @@ const HeaderSection = ({ section, onUpdate }) => {
     }));
   };
 
+  // Handle for submit
   const handleSubmit = (e) => {
     e.preventDefault();
     onUpdate({ content: formData });

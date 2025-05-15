@@ -6,6 +6,7 @@ const AboutSection = ({ section, onUpdate }) => {
   const [formData, setFormData] = useState(section.content);
   const [newSkill, setNewSkill] = useState('');
 
+  // Edit mode
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -14,6 +15,7 @@ const AboutSection = ({ section, onUpdate }) => {
     }));
   };
 
+  // Add Skills
   const handleAddSkill = () => {
     if (newSkill.trim()) {
       setFormData(prev => ({
@@ -24,6 +26,7 @@ const AboutSection = ({ section, onUpdate }) => {
     }
   };
 
+  // Remove Skills
   const handleRemoveSkill = (index) => {
     setFormData(prev => ({
       ...prev,
@@ -31,6 +34,7 @@ const AboutSection = ({ section, onUpdate }) => {
     }));
   };
 
+  // Submit
   const handleSubmit = (e) => {
     e.preventDefault();
     onUpdate({ content: formData });

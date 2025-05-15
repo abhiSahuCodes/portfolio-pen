@@ -95,7 +95,7 @@ export const SECTION_TEMPLATES = [
   },
 ];
 
-// Create a draggable template item component
+// Creating a draggable template item component
 const DraggableTemplateItem = ({ template, onAdd }) => {
   const {
     attributes,

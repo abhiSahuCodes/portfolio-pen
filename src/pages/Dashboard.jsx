@@ -1,20 +1,26 @@
-
-import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { createNewPortfolio, loadPortfolio, importPortfolio } from '../lib/redux/slices/portfolioSlice';
-import { useToast } from '../hooks/use-toast';
-import { importFromJSON } from '../lib/utils/exportUtils';
-import Navbar from '../components/common/Navbar';
+import React, { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  createNewPortfolio,
+  loadPortfolio,
+  importPortfolio,
+  deletePortfolio,
+} from "../lib/redux/slices/portfolioSlice";
+import { useToast } from "../hooks/use-toast";
+import { importFromJSON } from "../lib/utils/exportUtils";
+import Navbar from "../components/common/Navbar";
 
 const Dashboard = () => {
   const [isCreating, setIsCreating] = useState(false);
-  const [newPortfolioName, setNewPortfolioName] = useState('');
+  const [newPortfolioName, setNewPortfolioName] = useState("");
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [previewPortfolio, setPreviewPortfolio] = useState(null);
+  const [portfolioToDelete, setPortfolioToDelete] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const fileInputRef = useRef(null);
-  const { savedPortfolios } = useSelector(state => state.portfolio);
-  const { user } = useSelector(state => state.auth);
+  const { savedPortfolios } = useSelector((state) => state.portfolio);
+  const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -22,12 +28,12 @@ const Dashboard = () => {
   const handleCreatePortfolio = () => {
     if (newPortfolioName.trim()) {
       dispatch(createNewPortfolio(newPortfolioName.trim()));
-      navigate('/editor');
+      navigate("/editor");
       toast({
         title: "Portfolio created",
         description: `Started new portfolio: ${newPortfolioName}`,
       });
-      setNewPortfolioName('');
+      setNewPortfolioName("");
       setIsCreating(false);
     }
   };
@@ -40,15 +46,15 @@ const Dashboard = () => {
     const file = e.target.files[0];
     if (file) {
       importFromJSON(file)
-        .then(portfolio => {
+        .then((portfolio) => {
           dispatch(importPortfolio(portfolio));
           toast({
             title: "Portfolio imported",
             description: `Successfully imported: ${portfolio.title}`,
           });
-          navigate('/editor');
+          navigate("/editor");
         })
-        .catch(error => {
+        .catch((error) => {
           toast({
             title: "Import failed",
             description: error.message,
@@ -61,7 +67,7 @@ const Dashboard = () => {
 
   const handleLoadPortfolio = (portfolio) => {
     dispatch(loadPortfolio(portfolio));
-    navigate('/editor');
+    navigate("/editor");
   };
 
   const handlePreviewPortfolio = (portfolio) => {
@@ -74,15 +80,39 @@ const Dashboard = () => {
     setPreviewPortfolio(null);
   };
 
+  const handleDeleteClick = (portfolio) => {
+    setPortfolioToDelete(portfolio);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    if (portfolioToDelete) {
+      dispatch(deletePortfolio(portfolioToDelete.id));
+      toast({
+        title: "Portfolio deleted",
+        description: `Successfully deleted: ${portfolioToDelete.title}`,
+      });
+      setPortfolioToDelete(null);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  const cancelDelete = () => {
+    setPortfolioToDelete(null);
+    setShowDeleteConfirm(false);
+  };
+  
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navbar />
-      
+
       <main className="py-16">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
           <div className="px-4 py-8 sm:px-0">
             <div className="pb-5 border-b border-gray-200 dark:border-gray-700 sm:flex sm:items-center sm:justify-between">
-              <h3 className="text-2xl leading-6 font-medium text-gray-900 dark:text-gray-100">Dashboard</h3>
+              <h3 className="text-2xl leading-6 font-medium text-gray-900 dark:text-gray-100">
+                Dashboard
+              </h3>
               <div className="mt-3 flex sm:mt-0 sm:ml-4">
                 <button
                   type="button"
@@ -131,10 +161,12 @@ const Dashboard = () => {
                     </div>
                     <div className="ml-5 flex-1">
                       <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">
-                        Welcome{user ? `, ${user.name}` : ''}!
+                        Welcome{user ? `, ${user.name}` : ""}!
                       </h3>
                       <div className="mt-2 max-w-xl text-sm text-gray-500 dark:text-gray-400">
-                        <p>Create a new portfolio or manage your existing ones.</p>
+                        <p>
+                          Create a new portfolio or manage your existing ones.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -154,80 +186,118 @@ const Dashboard = () => {
                       className="p-1 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100"
                       aria-label="Close preview"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="w-6 h-6"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
                       </svg>
                     </button>
                   </div>
-                  
+
                   <div className="border border-gray-200 rounded-md p-4 max-h-[70vh] overflow-auto">
-                    {/* Create a copy of the sections array before sorting to avoid modifying the original */}
+                    {/* Section array copy to avoid modification to original */}
                     {[...previewPortfolio.sections]
                       .sort((a, b) => a.order - b.order)
                       .map((section) => (
-                        <div key={section.id} className="mb-6 p-4 border-b border-gray-200 last:border-b-0">
-                          {section.type === 'header' && (
+                        <div
+                          key={section.id}
+                          className="mb-6 p-4 border-b border-gray-200 last:border-b-0"
+                        >
+                          {section.type === "header" && (
                             <div className="text-center mb-8">
                               {section.content.image && (
                                 <div className="w-32 h-32 mx-auto mb-4 overflow-hidden rounded-full">
-                                  <img 
-                                    src={section.content.image} 
-                                    alt={section.content.name} 
+                                  <img
+                                    src={section.content.image}
+                                    alt={section.content.name}
                                     className="w-full h-full object-cover"
                                   />
                                 </div>
                               )}
-                              <h1 className="text-3xl font-bold text-gray-900">{section.content.name}</h1>
-                              <p className="mt-2 text-xl text-gray-700">{section.content.title}</p>
-                              <p className="text-md text-gray-500 mt-1">{section.content.subtitle}</p>
+                              <h1 className="text-3xl font-bold text-gray-900">
+                                {section.content.name}
+                              </h1>
+                              <p className="mt-2 text-xl text-gray-700">
+                                {section.content.title}
+                              </p>
+                              <p className="text-md text-gray-500 mt-1">
+                                {section.content.subtitle}
+                              </p>
                             </div>
                           )}
-                          
-                          {section.type === 'about' && (
+
+                          {section.type === "about" && (
                             <div className="mb-8">
-                              <h2 className="text-2xl font-bold text-gray-900 mb-4">{section.content.title}</h2>
-                              <p className="text-gray-700 mb-6">{section.content.description}</p>
-                              {section.content.skills && section.content.skills.length > 0 && (
-                                <div>
-                                  <h3 className="text-xl font-medium text-gray-900 mb-2">Skills</h3>
-                                  <div className="flex flex-wrap gap-2">
-                                    {section.content.skills.map((skill, index) => (
-                                      <span 
-                                        key={index} 
-                                        className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm"
-                                      >
-                                        {skill}
-                                      </span>
-                                    ))}
+                              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                                {section.content.title}
+                              </h2>
+                              <p className="text-gray-700 mb-6">
+                                {section.content.description}
+                              </p>
+                              {section.content.skills &&
+                                section.content.skills.length > 0 && (
+                                  <div>
+                                    <h3 className="text-xl font-medium text-gray-900 mb-2">
+                                      Skills
+                                    </h3>
+                                    <div className="flex flex-wrap gap-2">
+                                      {section.content.skills.map(
+                                        (skill, index) => (
+                                          <span
+                                            key={index}
+                                            className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm"
+                                          >
+                                            {skill}
+                                          </span>
+                                        )
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              )}
+                                )}
                             </div>
                           )}
-                          
-                          {section.type === 'projects' && (
+
+                          {section.type === "projects" && (
                             <div className="mb-8">
-                              <h2 className="text-2xl font-bold text-gray-900 mb-4">{section.content.title}</h2>
+                              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                                {section.content.title}
+                              </h2>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {section.content.projects.map((project) => (
-                                  <div key={project.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                                  <div
+                                    key={project.id}
+                                    className="border border-gray-200 rounded-lg overflow-hidden"
+                                  >
                                     {project.image && (
                                       <div className="h-48 overflow-hidden">
-                                        <img 
-                                          src={project.image} 
-                                          alt={project.title} 
+                                        <img
+                                          src={project.image}
+                                          alt={project.title}
                                           className="w-full h-full object-cover"
                                         />
                                       </div>
                                     )}
                                     <div className="p-4">
-                                      <h3 className="text-lg font-medium text-gray-900">{project.title}</h3>
-                                      <p className="text-gray-700 mt-2">{project.description}</p>
+                                      <h3 className="text-lg font-medium text-gray-900">
+                                        {project.title}
+                                      </h3>
+                                      <p className="text-gray-700 mt-2">
+                                        {project.description}
+                                      </p>
                                       {project.link && (
-                                        <a 
-                                          href={project.link} 
-                                          target="_blank" 
-                                          rel="noopener noreferrer" 
+                                        <a
+                                          href={project.link}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
                                           className="text-indigo-600 hover:text-indigo-900 mt-2 inline-block"
                                         >
                                           View Project
@@ -239,23 +309,31 @@ const Dashboard = () => {
                               </div>
                             </div>
                           )}
-                          
-                          {section.type === 'contact' && (
+
+                          {section.type === "contact" && (
                             <div className="mb-8">
-                              <h2 className="text-2xl font-bold text-gray-900 mb-4">{section.content.title}</h2>
+                              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                                {section.content.title}
+                              </h2>
                               <div className="space-y-2">
                                 {section.content.email && (
                                   <p className="flex items-center gap-2">
-                                    <span className="font-medium">Email:</span> 
-                                    <a href={`mailto:${section.content.email}`} className="text-indigo-600 hover:text-indigo-900">
+                                    <span className="font-medium">Email:</span>
+                                    <a
+                                      href={`mailto:${section.content.email}`}
+                                      className="text-indigo-600 hover:text-indigo-900"
+                                    >
                                       {section.content.email}
                                     </a>
                                   </p>
                                 )}
                                 {section.content.phone && (
                                   <p className="flex items-center gap-2">
-                                    <span className="font-medium">Phone:</span> 
-                                    <a href={`tel:${section.content.phone}`} className="text-indigo-600 hover:text-indigo-900">
+                                    <span className="font-medium">Phone:</span>
+                                    <a
+                                      href={`tel:${section.content.phone}`}
+                                      className="text-indigo-600 hover:text-indigo-900"
+                                    >
                                       {section.content.phone}
                                     </a>
                                   </p>
@@ -263,17 +341,32 @@ const Dashboard = () => {
                                 {section.content.social && (
                                   <div className="flex items-center gap-4 mt-4">
                                     {section.content.social.github && (
-                                      <a href={section.content.social.github} target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-indigo-600">
+                                      <a
+                                        href={section.content.social.github}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-gray-700 hover:text-indigo-600"
+                                      >
                                         GitHub
                                       </a>
                                     )}
                                     {section.content.social.linkedin && (
-                                      <a href={section.content.social.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-indigo-600">
+                                      <a
+                                        href={section.content.social.linkedin}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-gray-700 hover:text-indigo-600"
+                                      >
                                         LinkedIn
                                       </a>
                                     )}
                                     {section.content.social.twitter && (
-                                      <a href={section.content.social.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-indigo-600">
+                                      <a
+                                        href={section.content.social.twitter}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-gray-700 hover:text-indigo-600"
+                                      >
                                         Twitter
                                       </a>
                                     )}
@@ -292,7 +385,9 @@ const Dashboard = () => {
             {isCreating && (
               <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
                 <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Create new portfolio</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    Create new portfolio
+                  </h3>
                   <input
                     type="text"
                     value={newPortfolioName}
@@ -306,7 +401,7 @@ const Dashboard = () => {
                       type="button"
                       onClick={() => {
                         setIsCreating(false);
-                        setNewPortfolioName('');
+                        setNewPortfolioName("");
                       }}
                       className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
@@ -323,9 +418,40 @@ const Dashboard = () => {
                 </div>
               </div>
             )}
+            {showDeleteConfirm && portfolioToDelete && (
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
+                <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    Delete Portfolio
+                  </h3>
+                  <p className="text-gray-700 mb-4">
+                    Are you sure you want to delete "{portfolioToDelete.title}"?
+                    This action cannot be undone.
+                  </p>
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      onClick={cancelDelete}
+                      className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmDelete}
+                      className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="mt-6">
-              <h3 className="text-xl font-medium text-gray-900 mb-4">Recent Portfolios</h3>
+              <h3 className="text-xl font-medium text-gray-900 mb-4">
+                Recent Portfolios
+              </h3>
               {savedPortfolios.length > 0 ? (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {savedPortfolios.map((portfolio) => (
@@ -356,6 +482,13 @@ const Dashboard = () => {
                           >
                             Preview
                           </button>
+                          <span className="text-gray-300">|</span>
+                          <button
+                            onClick={() => handleDeleteClick(portfolio)}
+                            className="text-red-600 hover:text-red-900 text-sm font-medium"
+                          >
+                            Delete
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -364,7 +497,9 @@ const Dashboard = () => {
               ) : (
                 <div className="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
                   <div className="px-4 py-5 sm:p-6 text-center">
-                    <p className="text-gray-500">No portfolios yet. Create one to get started!</p>
+                    <p className="text-gray-500">
+                      No portfolios yet. Create one to get started!
+                    </p>
                   </div>
                 </div>
               )}

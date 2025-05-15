@@ -22,7 +22,7 @@ const SectionComponentMap = {
   contact: ContactSection,
 };
 
-// Create a draggable section component
+// Creating a draggable section component
 const DraggableSection = ({ section, index, onRemove, onUpdate }) => {
   const {
     attributes,

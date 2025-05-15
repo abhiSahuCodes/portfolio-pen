@@ -5,6 +5,7 @@ const ContactSection = ({ section, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(section.content);
 
+// Handle for change
   const handleChange = (e) => {
     const { name, value } = e.target;
     
@@ -25,6 +26,7 @@ const ContactSection = ({ section, onUpdate }) => {
     }
   };
 
+  // Handle for submit
   const handleSubmit = (e) => {
     e.preventDefault();
     onUpdate({ content: formData });
